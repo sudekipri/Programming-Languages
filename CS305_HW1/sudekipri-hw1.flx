@@ -1,0 +1,141 @@
+%{
+	#include <stdbool.h>	
+	#include <stdlib.h>
+	#include <string.h>
+	#include <stdio.h>		
+	int numLines = 1;
+%}
+tGET		\"Get\"
+tSET		\"Set\"
+tFUNCTION	\"Function\"
+tPRINT		\"Print\"
+tFOR		\"For\"
+tIF		\"If\"
+tRETURN		\"Return\"
+tCOMMA		\,
+tPLUS		\"\+\"
+tMUL		\"\*\"
+tINC		\"\+\+\"
+tLBRAC		\[
+tGT		\"\>\"
+tGEQ		\"\>\=\"
+tEQUALITY	\"\=\=\"
+tMINUS		\"\-\"
+tDIV		\"\/\"
+tDEC		\"\-\-\"
+tRBRAC		\]
+tLT		\"\<\"
+tLEQ		\"\<\=\"
+tIDENT		\"[_a-zA-Z][_a-zA-Z0-9]*\"
+tNUM		(-[0-9]+\.[0-9]+)|(-[0-9]+)|([0-9]+\.[0-9]+)|([0-9]+)
+tSTRING		\'[^']*\'
+
+%%
+\n		numLines++;
+{tGET}		printf("%d %s\n", numLines, "tGET");
+{tSET}		printf("%d %s\n", numLines, "tSET");
+{tFUNCTION}	printf("%d %s\n", numLines, "tFUNCTION");
+{tPRINT}	printf("%d %s\n", numLines, "tPRINT");
+{tFOR}		printf("%d %s\n", numLines, "tFOR");
+{tIF}		printf("%d %s\n", numLines, "tIF");
+{tRETURN}	printf("%d %s\n", numLines, "tRETURN");
+{tCOMMA}	printf("%d %s\n", numLines, "tCOMMA");
+{tPLUS}		printf("%d %s\n", numLines, "tPLUS");
+{tMUL}		printf("%d %s\n", numLines, "tMUL");
+{tINC}		printf("%d %s\n", numLines, "tINC");
+{tLBRAC}	printf("%d %s\n", numLines, "tLBRAC");
+{tGT}		printf("%d %s\n", numLines, "tGT");
+{tGEQ}		printf("%d %s\n", numLines, "tGEQ");
+{tEQUALITY}	printf("%d %s\n", numLines, "tEQUALITY");
+{tMINUS}	printf("%d %s\n", numLines, "tMINUS");
+{tDIV}		printf("%d %s\n", numLines, "tDIV");
+{tDEC}		printf("%d %s\n", numLines, "tDEC");
+{tRBRAC}	printf("%d %s\n", numLines, "tRBRAC");
+{tLT}		printf("%d %s\n", numLines, "tLT");
+{tLEQ}		printf("%d %s\n", numLines, "tLEQ");
+
+{tIDENT}		{
+			char subtext[yyleng-1];
+			memcpy(subtext, &yytext[1], yyleng-2);
+			subtext[yyleng-2] = '\0';
+			printf("%d %s (%s)\n", numLines, "tIDENT", subtext);
+			}
+
+{tNUM}			{	
+			bool is_negative = false;
+			bool has_dot = false;
+			int startPos = 0;
+			// check if the number is negative
+			if (yytext[startPos] == '-')
+			{
+				startPos ++;
+				is_negative = true;
+			}
+			
+			// if there is a dot, the number is real
+			int pos;
+			for (pos = startPos; has_dot==false &&  pos < yyleng; pos++)
+			{
+				if (yytext[pos] == '.') has_dot = true;
+			}
+		
+			while(yytext[startPos] == '0' && (yytext[startPos+1] != '.' && yytext[startPos+1] != '\0')) startPos++;
+			
+			int endPos;
+			if (has_dot == true)
+			{
+				endPos = yyleng - 1;
+				while(yytext[endPos] == '0' && yytext[endPos-1] != '.') endPos--;
+			}
+			else
+			{
+				endPos = yyleng -1;
+			}
+			
+			char subtext[yyleng];
+			if (is_negative == true)
+			{
+				subtext[0] = '-';
+				int i = 0;
+				for (; i < endPos-startPos+1; i++) subtext[i+1] = yytext[startPos +i];
+				subtext[endPos-startPos +2] = '\0';
+			}			
+			else
+			{
+				memcpy(subtext, &yytext[startPos], endPos-startPos +1);
+				subtext[endPos-startPos+1] = '\0';
+			}
+
+
+			printf("%d %s (%s) (%s)\n", numLines, "tNUM", yytext, subtext);
+			}
+
+{tSTRING}		{	
+			int decrease_num=0;
+			int pos;
+			for (pos=0; pos < yyleng; pos++)
+			{
+				if (yytext[pos] == '\n')
+				{
+					decrease_num ++;
+					numLines++;
+				}
+			}
+			char subtext[yyleng-1];
+			memcpy(subtext, &yytext[1], yyleng-2);
+			subtext[yyleng-2] = '\0';
+			printf("%d %s (%s)\n", numLines - decrease_num, "tSTRING", subtext);
+			}
+
+[ \t\\n]  ; 
+
+. 	{ 	
+		printf("%d ILLEGAL CHARACTER: (%c)\n", numLines, yytext[0]); 
+	} 		
+
+%%
+int main()
+{
+	yylex();
+}
+

@@ -1,0 +1,78 @@
+%{
+	#include "sudekipri-hw3.h"
+	#include "sudekipri-hw3.tab.h"
+
+	int numLines = 1; 
+%}
+%%
+
+['][^']*[']		{
+				char subtxt[yyleng-1];
+				memcpy(subtxt, &yytext[1], yyleng-2);
+				subtxt[yyleng-2] = '\0';
+
+				LiteralValue * litValue = (LiteralValue *) malloc(sizeof(LiteralValue));
+				litValue->returnType = STRING;		
+
+				char * flexResult = (char *) malloc(strlen(subtxt)+1);
+				strcpy(flexResult, subtxt);
+				litValue->stringValue = flexResult;
+				
+				yylval.literalValuePtr = litValue;
+				
+				return tSTRING;
+			}
+
+["]Get["]		return tGET;
+["]Set["]		return tSET;
+["]Function["]		return tFUNCTION;
+["]Print["]		return tPRINT;
+["]If["]		return tIF;
+["]Return["]		return tRETURN;
+
+["]"+"["]               {yylval.lineNumber = numLines; return tADD;}
+["]"-"["]               {yylval.lineNumber = numLines; return tSUB;}
+["]"*"["]               {yylval.lineNumber = numLines; return tMUL;}
+["]"/"["]               {yylval.lineNumber = numLines; return tDIV;}
+["]"++"["]		return tINC;
+["]">"["]		return tGT;
+["]"=="["]		return tEQUALITY;
+["]"--"["]		return tDEC;
+["]"<"["]		return tLT;
+["]"<="["]		return tLEQ;
+["]">="["]		return tGEQ;
+
+
+["][_a-zA-Z][a-zA-Z0-9_]*["]	{
+					return tIDENT;
+				}
+				
+[0-9]+ | 
+-[0-9]+			{	
+				LiteralValue * litValue = (LiteralValue *) malloc(sizeof(LiteralValue));
+				litValue->returnType = INT;
+				litValue->integerValue = atoi(yytext);
+				
+				yylval.literalValuePtr = litValue;
+
+				return tNUM;
+			}
+[0-9]+"."[0-9]+	|
+-[0-9]+"."[0-9]+        {
+				LiteralValue * litValue = (LiteralValue *) malloc(sizeof(LiteralValue));
+				litValue->returnType = REAL;
+				litValue->realValue = atof(yytext);
+
+				yylval.literalValuePtr = litValue;
+
+				return tNUM;
+			}
+
+\n			numLines++;	
+[ \t]+ 
+.			{
+				return yytext[0];
+			}
+
+%%
+
